@@ -1,4 +1,3 @@
-/*============================================================================
 //  PIN Define:
 	CAN1	CAN0_TX 		P0_0  2nd Alternative
 	CAN1 	CAN0_RX 		P0_1  2nd Alternative
@@ -6,7 +5,6 @@
 	CAN2 	CAN1_TX     P10_7 4th Alternative
 	CAN2	CAN1_RX			P10_6 4th Alternative
 	Baud Rate: 500Kbps
-	
 //============================================================================
 //==========================================================================*/
 // Includes
@@ -610,3 +608,4 @@ int RS_CAN_error(void)
     }
     return error;
 }
+

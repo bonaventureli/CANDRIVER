@@ -67,3 +67,4 @@ typedef struct {
 //============================================================================
 extern const can_cre_type RX_RULE_TABLE_LIST[RX_RULE_NUM];
 #endif
+
