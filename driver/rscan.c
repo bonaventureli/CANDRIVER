@@ -1,89 +1,140 @@
-//  PIN Define:
+
+/******************************************************************************
+* file Name : rscan.c
+* version   : 0.3
+* Argument  : andy
+* data  : 2018/8/24
+* describe: 
+*PIN Define:
 	CAN1	CAN0_TX 		P0_0  2nd Alternative
 	CAN1 	CAN0_RX 		P0_1  2nd Alternative
    
-	CAN2 	CAN1_TX     P10_7 4th Alternative
+	CAN2 	CAN1_TX     		P10_7 4th Alternative
 	CAN2	CAN1_RX			P10_6 4th Alternative
 	Baud Rate: 500Kbps
-//============================================================================
-//==========================================================================*/
-// Includes
-//============================================================================
-#include  "r_typedefs.h"
-#include  "iodefine.h"
+
+	CAN0
+	0010 2th output P0_0   CAN0TX
+	0011 2th input  P0_1   CAN0RX
+	0011 2th input  P10_0  CAN0RX
+	0010 2th output P10_1  CAN0TX
+
+	CAN1
+	0110 4th output P10_7  CAN1TX
+	0111 4th input  P10_6  CAN1RX
+
+	CAN2
+	0000 1st output P0_4   CAN2TX
+	0001 1st input  P0_5   CAN2RX
+
+
+
+	PFCAEn_m 	PFCEn_m 	PFCn_m 	PMn_m 	Function
+	0 		0 		0 	1 	1st alternative function / Input
+	0 		0 		0 	0 	1st alternative function / Output
+	0 		0 		1 	1 	2nd alternative function / Input
+	0 		0 		1 	0 	2nd alternative function / Output
+	0 		1 		0 	1 	3rd alternative function / Input
+	0 		1 		0 	0 	3rd alternative function / Output
+	0 		1 		1 	1 	4th alternative function / Input
+	0 		1 		1 	0 	4th alternative function / Output
+	1 		0 		0 	1 	5th alternative function / Input
+	1 		0 		0 	0 	5th alternative function / Output
+	1 		0 		1 	X 	Setting prohibited
+	1 		1 		X 	X 	Setting prohibited
+	
+******************************************************************************/
+#include  	"r_typedefs.h"
+#include  	"iodefine.h"
 #include 	"rscan.h"
 #include 	"can_table.h"
-
-//============================================================================
-// Functions
-//============================================================================
+#define CANCLOCK 0
+/******************************************************************************
+* Function Name : void CanPinConfig( void )
+* Description   : This function config the CAN Pin.
+* Argument      : none
+* Return Value  : none
+******************************************************************************/
+#define CAN0 1
 void CanPinConfig(void)
 {
-#if 1
-	// CAN0 ------------------------------------------------------	
-	/* Set CAN0TX as P0_0 and CAN3RX as P0_1 */ 
-	//0010  2th output P0_0
-	//0011  4th input  P0_1
-	PFCE0&= ~(0x00003);
-	PFC0 |= 0x00003;                                                      
+#if CAN0
+	/*CAN0 Set CAN0TX as P0_0 and CAN0RX as P0_1 / 
+	0010 2th output P0_0   CAN0TX
+	0011 2th input  P0_1   CAN0RX
+	*/
+
+	/*PFCEn — Port Function Control Expansion Register*/
+	PFCE0&= ~(0x03<<0);
+	/*PFCn / JPFC0 — Port Function Control Register*/
+	PFC0 |= (0x03<<0); 
+	/*PMn / APMn / JPM0 — Port Mode Register
+	 * 0: Output mode (output enabled)
+	 * 1: Input mode (output disabled)*/
 	PM0 &= ~(1<<0);                                                       
 	PM0 |= 1<<1;
-	PMC0 |= 0x00003;
 
-//	/* P0_0 (CAN0TX) */ 
-//	//0010 2th output  P0_0
-//	PFCAE0 &= 0xFFFEU;
-//	PFCE0  &= 0xFFFEU;
-//	PFC0   |= 0x0001U;
-//	PM0    &= 0xFFFEU;
-//	PMC0   |= 0x0001U;
-
-//	/* P0_1 (CAN0RX) */  
-//	//0011 4th input  P0_1
-//	PFCAE0 &= 0xFFFDU;
-//	PFCE0  &= 0xFFFDU;
-//	PFC0   |= 0x0002U;
-//	P0     |= 0x0002U;
-//	PM0    |= 0x0002U;
-//	PMC0   |= 0x0002U;
+	/*	PMCn / JPMC0 — Port Mode Control Register
+	 *	1: Alternative mode
+	 *	0: Port mode*/
+	PMC0 |= (0x03<<0);
 #else 
-	/* P10_0 (CAN0RX) */  
-	//0011 4th input P10_0
-	PFCAE10 &= 0xFFFEU;
-	PFCE10  &= 0xFFFEU;
-	PFC10   |= 0x0001U;
-	PM10    |= 0x0001U;
-	PMC10   |= 0x0001U;
+	/*CAN0 Set CAN0TX as P10_1 and CAN0RX as P10_0 / 
+	0011 2th input  P10_0  CAN0RX
+	0010 2th output P10_1  CAN0TX
+	*/
 
-	/* P10_1 (CAN0TX) */  
-	//0010 2th output P10_1
-	PFCAE10 &= 0xFFFDU;
-	PFCE10  &= 0xFFFDU;
-	PFC10   |= 0x0002U;
-	P10     |= 0x0002U;
-	PM10    &= 0xFFFDU;
-	PMC10   |= 0x0002U;
+	/*PFCEn — Port Function Control Expansion Register*/
+	PFCE10&= ~(0x03<<0);
+	/*PFCn / JPFC0 — Port Function Control Register*/
+	PFC10 |= (0x03<<0); 
+	/*PMn / APMn / JPM0 — Port Mode Register
+	 * 0: Output mode (output enabled)
+	 * 1: Input mode (output disabled)*/
+	PM10 |= (1<<0);                                                       
+	PM10 &= ~(1<<1);
+	/*	PMCn / JPMC0 — Port Mode Control Register
+	 *	1: Alternative mode
+	 *	0: Port mode*/
+	PMC10 |= (0x03<<0);
 	
 #endif
-	// CAN1 ------------------------------------------------------
-	/* Set CAN1TX as P10_7 and CAN1RX as P10_6 */    
-	
-	//0110 4th output P10_7                   
-	//0111 4th input  P10_6                 
-	PFCE10 |= 0x00C0;
-	PFC10  |= 0x00C0;                                                      
+	/* CAN1 Set CAN1TX as P10_7 and CAN1RX as P10_6    
+	 *0110 4th output P10_7  CAN1TX
+	 *0111 4th input  P10_6  CAN1RX */
+
+	/*PFCEn — Port Function Control Expansion Register*/
+	PFCE10 |= (0x03<<6);
+	/*PFCn / JPFC0 — Port Function Control Register*/
+	PFC10  |= (0x03<<6);                                                      
+	/*PMn / APMn / JPM0 — Port Mode Register
+	 * 0: Output mode (output enabled)
+	 * 1: Input mode (output disabled)*/
 	PM10 &= ~(1<<7);                                                       
 	PM10 |= 1<<6; 
-	PMC10  |= 0x00C0; 
-	// CAN2 ------------------------------------------------------
-	/* Set CAN2TX as P0_4 and CAN2RX as P0_5 */ 
+	/*	PMCn / JPMC0 — Port Mode Control Register
+	 *	1: Alternative mode
+	 *	0: Port mode*/
+	PMC10  |= (0x03<<6);
+
+
+
+	/* CAN2 Set CAN2TX as P0_4 and CAN2RX as P0_5 
+	 * 0000 1st output P0_4   CAN2TX
+         * 0001 1st input  P0_5   CAN2RX */
 	
-	//0000 1st output P0_4
-	//0001 1st input  P0_5
+	/*PFCEn — Port Function Control Expansion Register*/
 	PFCE0&= ~(0x00003<<4);
+	/*PFCn / JPFC0 — Port Function Control Register*/
 	PFC0 &= ~(0x00003<<4);                                                      
+	/*PMn / APMn / JPM0 — Port Mode Register
+	 * 0: Output mode (output enabled)
+	 * 1: Input mode (output disabled)*/
 	PM0 &= ~(1<<4);                                                       
 	PM0 |= 1<<5;
+	/*	PMCn / JPMC0 — Port Mode Control Register
+	 *	1: Alternative mode
+	 *	0: Port mode*/
 	PMC0 |= 0x00003<<4;
 }
 /*****************************************************************************
@@ -94,14 +145,43 @@ void CanPinConfig(void)
 ******************************************************************************/
 void RS_CAN_init(void)
 {
+#if CANCLOCK
+    uint32_t    reg32_value;
+    /* Source Clock Setting for   C_ISO_CAN
+    CKSC_ICANS_CTL	 -   C_ISO_CAN   Source Clock Selection Register
+    b31:b 2                        - Reserved set to 0
+    b 1:b 0              ICANSCSID - Source Clock Setting for  C_ISO_CAN  - MainOSC X */
+    do
+    {
+        reg32_value                = 0x00000001UL;
+        PROTCMD1                   = 0x000000A5UL;   /* Protection release the CKSC_ILINS_CTL register */
+        CKSC_ILINS_CTL             = reg32_value;
+        CKSC_ILINS_CTL             = ~reg32_value;
+        CKSC_ILINS_CTL             = reg32_value;
+    } while ( PROTS1 != 0x00000000UL );
+    while ( CKSC_ICANS_CTL != reg32_value )
+    {
+        /* Waiting for CKSC_ILINS_CTL to set. */
+    }
+#else
     /* Main Osc -> CAN */
     protected_write(PROTCMD1,CKSC_ICANOSCD_CTL,0x01)
     while (PROTS1 ==0x01);
-    
-    /* Configure CAN0 GPIO-EnablePin P1_1 */
-    PMC1 &= ~(1<<1); //0 Port mode
-    PM1 &= ~(1<<1); // 0 Output
-    P1 &= ~(1<<1);    //First disabled  0 output low level
+#endif 
+    /*	PMCn / JPMC0 — Port Mode Control Register
+     *	1: Alternative mode
+     *	0: Port mode
+     *	Configure CAN0 GPIO-EnablePin P1_1 */
+    PMC1 &= ~(1<<1);
+    /*PMn / APMn / JPM0 — Port Mode Register
+     * 0: Output mode (output enabled)
+     * 1: Input mode (output disabled)*/
+    PM1 &= ~(1<<1);
+    /*Pn / APn / JP0 — Port Register
+     * 0: Outputs low level
+     * 1: Outputs high level
+     * First disabled */
+    P1 &= ~(1<<1);
     
     /* Configure CAN1 GPIO-EnablePin P2_6 */ 
     PMC2 &= ~(1<<6);
@@ -111,6 +191,10 @@ void RS_CAN_init(void)
     CanPinConfig();
         
     /* Wait while CAN RAM initialization is ongoing */
+    /*RSCAN0GSTS — Global Status Register
+     * bit3	-GRAMINIT CAN RAM Initialization Status Flag
+     * 0: CAN RAM initialization is completed.
+     * 1: CAN RAM initialization is ongoing.*/
     while((RSCAN0.GSTS.UINT32 & 0x00000008)) ;
 
     /* Switch to global/channel reset mode */
