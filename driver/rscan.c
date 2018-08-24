@@ -190,24 +190,59 @@ void RS_CAN_init(void)
     
     CanPinConfig();
         
-    /* Wait while CAN RAM initialization is ongoing */
     /*RSCAN0GSTS — Global Status Register
      * bit3	-GRAMINIT CAN RAM Initialization Status Flag
      * 0: CAN RAM initialization is completed.
      * 1: CAN RAM initialization is ongoing.*/
     while((RSCAN0.GSTS.UINT32 & 0x00000008)) ;
 
-    /* Switch to global/channel reset mode */
-    RSCAN0.GCTR.UINT32 &= 0xfffffffb;	//set the 3rd bit to 0 -- global stop mdoe  
-    RSCAN0.C0CTR.UINT32 &= 0xfffffffb;
-    RSCAN0.C1CTR.UINT32 &= 0xfffffffb;
-    RSCAN0.C2CTR.UINT32 &= 0xfffffffb;
+    /*RSCAN0GCTR — Global Control Register
+     *bit2	-GSLPR Global Stop Mode
+     *0: Other than global stop mode
+     *1: Global stop mode
+     *Switch to global/channel reset mode
+     * */
+    RSCAN0.GCTR.UINT32 &= ~(0x01<<2);
+    /*RSCAN0CmCTR — Channel Control Register (m = 0 to 5)
+     *bit2 CSLPR Channel Stop Mode
+     *0: Other than channel stop mode
+     *1: Channel stop mode
+     * */
+    RSCAN0.C0CTR.UINT32 &= ~(0x01<<2);
+    RSCAN0.C1CTR.UINT32 &= ~(0x01<<2);
+    RSCAN0.C2CTR.UINT32 &= ~(0x01<<2);
 
-    /* Configure clk_xincan as CAN-ClockSource */
-    RSCAN0.GCFG.UINT32 = 0x00000010;
+    /*RSCAN0GCFG — Global Configuration Register
+     *bit4	DCS CAN Clock Source Select*2
+     *0: clkc
+     *1: clk_xincan
+     *Configure clk_xincan
+     * */
+    RSCAN0.GCFG.UINT32 |= (0x01<<4);
     
     /* When fCAN is 16MHz, 
     Bitrate = fCAN/(BRP+1)/(1+TSEG1+TSEG2) = 16/2/16 = 0.5Mbps(500Kbps) */
+    /*RSCAN0CmCFG — Channel Configuration Register (m = 0 to 5)
+     *bit25-bit24	-SJW[1:0] Resynchronization Jump Width Control
+     *1 0: 3 Tq
+     *bit22-bit20	-TSEG2[2:0] Time Segment 2 Control
+     *0 1 1: 4 Tq
+     *bit19-bit16	-TSEG1[3:0] Time Segment 1 Control
+     *1 0 1 0: 11 Tq
+     *bit9-bit0		-BRP[9:0] Prescaler Division Ratio Set
+     * */
+
+    RSCAN0.C0CFG.UINT32 &= ~(0x03<<24);
+    RSCAN0.C0CFG.UINT32 |= (0x02<<24);
+
+
+    RSCAN0.C0CFG.UINT32 &= ~(0x01<<24);
+    RSCAN0.C0CFG.UINT32 &= ~(0x01<<22);
+    RSCAN0.C0CFG.UINT32 |= (0x03<<19);
+    RSCAN0.C0CFG.UINT32 &= ~(0x01<<18);
+    RSCAN0.C0CFG.UINT32 |= (0x03<<17);
+    RSCAN0.C0CFG.UINT32 &= ~(0x01<<16);
+    RSCAN0.C0CFG.UINT32 |= (0x01<<0);
 
     RSCAN0.C0CFG.UINT32 = 0x023a0001; //SJW =3TQ, TSEG1=11TQ, TSEG2=4TQ, BRP=1
 
